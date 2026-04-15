@@ -56,8 +56,8 @@ const ATTACHMENT_FOLDERS: Record<string, string> = {
   "outro": "Outros",
 };
 
-async function buildAttachmentPath(bid: Bid, attachment: BidAttachment): Promise<string> {
-  const settings = await settingsStorage.getSettings();
+function buildAttachmentPath(bid: Bid, attachment: BidAttachment): string {
+  const settings = settingsStorage.getSettings();
   // Use clientBasePath to open files on user's computer
   let basePath = settings.clientBasePath || settings.rootPath;
 
@@ -73,8 +73,8 @@ async function buildAttachmentPath(bid: Bid, attachment: BidAttachment): Promise
   return filePath;
 }
 
-async function buildBidFolderPath(bid: Bid): Promise<string> {
-  const settings = await settingsStorage.getSettings();
+function buildBidFolderPath(bid: Bid): string {
+  const settings = settingsStorage.getSettings();
   // Use clientBasePath to open folders on user's computer
   let basePath = settings.clientBasePath || settings.rootPath;
 
@@ -97,7 +97,7 @@ export function BidDetail({ bid, onEdit, onDelete, onClose }: BidDetailProps) {
   const handleOpenFile = async (attachment: BidAttachment) => {
     try {
       setIsOpeningFile(true);
-      const filePath = await buildAttachmentPath(bid, attachment);
+      const filePath = buildAttachmentPath(bid, attachment);
 
       if (!filePath) {
         alert("Caminho do cliente não configurado. Configure em Configurações > Caminho Raiz do Seu Computador (Cliente)");
@@ -136,7 +136,7 @@ export function BidDetail({ bid, onEdit, onDelete, onClose }: BidDetailProps) {
   const handleOpenBidFolder = async () => {
     try {
       setIsOpeningFile(true);
-      const folderPath = await buildBidFolderPath(bid);
+      const folderPath = buildBidFolderPath(bid);
 
       if (!folderPath) {
         alert("Caminho do cliente não configurado. Configure em Configurações > Caminho Raiz do Seu Computador (Cliente)");

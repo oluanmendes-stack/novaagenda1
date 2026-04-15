@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Bid, BidStatus, BidAttachment, BidType, BidItem } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -155,29 +155,40 @@ export function BidForm({ bid, onSave, onCancel }: BidFormProps) {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState({
+    bidNumbers: [],
+    portals: [],
+    products: [],
+    cities: [],
+    years: [],
+  });
 
   // Get suggestions from bid history
-  const suggestions = useMemo(() => {
-    try {
-      const allBids = bidStorage.getBids();
+  useEffect(() => {
+    const loadSuggestions = async () => {
+      try {
+        const allBids = await bidStorage.getBids();
 
-      return {
-        bidNumbers: Array.from(new Set(allBids.map(b => b.bidNumber).filter(Boolean))).sort(),
-        portals: Array.from(new Set(allBids.map(b => b.portal).filter(Boolean))).sort(),
-        products: Array.from(new Set(allBids.map(b => b.products).filter(Boolean))).sort(),
-        cities: Array.from(new Set(allBids.map(b => b.city).filter(Boolean))).sort(),
-        years: Array.from(new Set(allBids.map(b => b.year.toString()).filter(Boolean))).sort().reverse(),
-      };
-    } catch (error) {
-      console.error("Error loading suggestions:", error);
-      return {
-        bidNumbers: [],
-        portals: [],
-        products: [],
-        cities: [],
-        years: [],
-      };
-    }
+        setSuggestions({
+          bidNumbers: Array.from(new Set(allBids.map(b => b.bidNumber).filter(Boolean))).sort(),
+          portals: Array.from(new Set(allBids.map(b => b.portal).filter(Boolean))).sort(),
+          products: Array.from(new Set(allBids.map(b => b.products).filter(Boolean))).sort(),
+          cities: Array.from(new Set(allBids.map(b => b.city).filter(Boolean))).sort(),
+          years: Array.from(new Set(allBids.map(b => b.year.toString()).filter(Boolean))).sort().reverse(),
+        });
+      } catch (error) {
+        console.error("Error loading suggestions:", error);
+        setSuggestions({
+          bidNumbers: [],
+          portals: [],
+          products: [],
+          cities: [],
+          years: [],
+        });
+      }
+    };
+
+    loadSuggestions();
   }, []);
 
 
@@ -224,7 +235,7 @@ export function BidForm({ bid, onSave, onCancel }: BidFormProps) {
       }
 
       // Create folder structure if basePath is configured
-      const basePath = await settingsStorage.getBasePath();
+      const basePath = settingsStorage.getBasePath();
       if (basePath && basePath.trim()) {
         try {
           const response = await fetch("/api/bids/create-folder", {
