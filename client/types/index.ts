@@ -1,3 +1,5 @@
+import { AppSettings } from "@shared/api";
+
 export type BidStatus = "cadastrado" | "codificado" | "nao_codificado_flamingo" | "questionamento" | "suspenso" | "won" | "lost" | "nao_temos";
 export type BidType = "chamamento_publico" | "dispensa_eletronica" | "pregao_eletronico" | "pregao_presencial";
 
@@ -52,8 +54,5 @@ export interface ProcessHistoryEntry {
   description: string;
 }
 
-export interface AppSettings {
-  rootPath: string; // Server path (where the app is running)
-  clientBasePath: string; // Client path (where user accesses from)
-  autoSaveEnabled: boolean;
-}
+// Re-export AppSettings from shared types
+export type { AppSettings };

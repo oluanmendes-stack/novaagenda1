@@ -10,3 +10,12 @@
 export interface DemoResponse {
   message: string;
 }
+
+/**
+ * Shared application settings
+ */
+export interface AppSettings {
+  rootPath: string;
+  clientBasePath: string;
+  autoSaveEnabled: boolean;
+}

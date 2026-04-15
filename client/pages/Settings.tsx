@@ -14,14 +14,17 @@ export default function Settings() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const settings = settingsStorage.getSettings();
-    setRootPath(settings.rootPath);
-    setClientBasePath(settings.clientBasePath);
-    setAutoSave(settings.autoSaveEnabled);
+    const loadSettings = async () => {
+      const settings = await settingsStorage.getSettings();
+      setRootPath(settings.rootPath);
+      setClientBasePath(settings.clientBasePath);
+      setAutoSave(settings.autoSaveEnabled);
+    };
+    loadSettings();
   }, []);
 
-  const handleSave = () => {
-    settingsStorage.saveSettings({
+  const handleSave = async () => {
+    await settingsStorage.saveSettings({
       rootPath,
       clientBasePath,
       autoSaveEnabled: autoSave,

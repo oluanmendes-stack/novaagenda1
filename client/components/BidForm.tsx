@@ -224,7 +224,7 @@ export function BidForm({ bid, onSave, onCancel }: BidFormProps) {
       }
 
       // Create folder structure if basePath is configured
-      const basePath = settingsStorage.getBasePath();
+      const basePath = await settingsStorage.getBasePath();
       if (basePath && basePath.trim()) {
         try {
           const response = await fetch("/api/bids/create-folder", {

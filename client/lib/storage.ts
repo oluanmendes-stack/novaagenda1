@@ -78,49 +78,74 @@ export const bidStorage = {
 };
 
 export const settingsStorage = {
-  getSettings: (): AppSettings => {
+  getSettings: async (): Promise<AppSettings> => {
     try {
-      const data = localStorage.getItem(SETTINGS_KEY);
-      if (!data) {
+      const response = await fetch("/api/settings");
+      if (!response.ok) {
+        throw new Error("Failed to fetch settings from server");
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching settings from server:", error);
+      // Fallback to localStorage if server is unavailable
+      try {
+        const data = localStorage.getItem(SETTINGS_KEY);
+        if (!data) {
+          return {
+            rootPath: "",
+            clientBasePath: "",
+            autoSaveEnabled: true,
+          };
+        }
+        return JSON.parse(data);
+      } catch {
         return {
           rootPath: "",
           clientBasePath: "",
           autoSaveEnabled: true,
         };
       }
-      return JSON.parse(data);
-    } catch {
-      return {
-        rootPath: "",
-        clientBasePath: "",
-        autoSaveEnabled: true,
-      };
     }
   },
 
-  saveSettings: (settings: AppSettings) => {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  saveSettings: async (settings: AppSettings): Promise<void> => {
+    try {
+      const response = await fetch("/api/settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(settings),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to save settings to server");
+      }
+    } catch (error) {
+      console.error("Error saving settings to server:", error);
+      // Fallback to localStorage if server is unavailable
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    }
   },
 
-  getBasePath: (): string => {
-    const settings = settingsStorage.getSettings();
+  getBasePath: async (): Promise<string> => {
+    const settings = await settingsStorage.getSettings();
     return settings.rootPath;
   },
 
-  setBasePath: (basePath: string) => {
-    const settings = settingsStorage.getSettings();
+  setBasePath: async (basePath: string): Promise<void> => {
+    const settings = await settingsStorage.getSettings();
     settings.rootPath = basePath;
-    settingsStorage.saveSettings(settings);
+    await settingsStorage.saveSettings(settings);
   },
 
-  getClientBasePath: (): string => {
-    const settings = settingsStorage.getSettings();
+  getClientBasePath: async (): Promise<string> => {
+    const settings = await settingsStorage.getSettings();
     return settings.clientBasePath;
   },
 
-  setClientBasePath: (clientBasePath: string) => {
-    const settings = settingsStorage.getSettings();
+  setClientBasePath: async (clientBasePath: string): Promise<void> => {
+    const settings = await settingsStorage.getSettings();
     settings.clientBasePath = clientBasePath;
-    settingsStorage.saveSettings(settings);
+    await settingsStorage.saveSettings(settings);
   },
 };

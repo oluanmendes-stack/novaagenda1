@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { handleCreateBidFolder, handleSetBasePath, handleOpenFile } from "./routes/bids";
+import { handleGetSettings, handleSaveSettings } from "./routes/settings";
 
 export function createServer() {
   const app = express();
@@ -24,6 +25,10 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
+
+  // Settings routes
+  app.get("/api/settings", handleGetSettings);
+  app.post("/api/settings", handleSaveSettings);
 
   // Bid routes
   app.post("/api/bids/create-folder", handleCreateBidFolder);
