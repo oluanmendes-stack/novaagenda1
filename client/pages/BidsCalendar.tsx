@@ -69,27 +69,27 @@ export default function BidsCalendar() {
     loadBids();
   }, []);
 
-  const loadBids = () => {
-    const loadedBids = bidStorage.getBids();
+  const loadBids = async () => {
+    const loadedBids = await bidStorage.getBids();
     setBids(loadedBids);
   };
 
-  const handleSaveBid = (bid: Bid) => {
-    bidStorage.saveBid(bid);
-    loadBids();
+  const handleSaveBid = async (bid: Bid) => {
+    await bidStorage.saveBid(bid);
+    await loadBids();
     setIsCreating(false);
     setSelectedBid(null);
   };
 
-  const handleEditBid = (bid: Bid) => {
-    bidStorage.saveBid(bid);
-    loadBids();
+  const handleEditBid = async (bid: Bid) => {
+    await bidStorage.saveBid(bid);
+    await loadBids();
     setSelectedBid(bid);
   };
 
-  const handleDeleteBid = (id: string) => {
-    bidStorage.deleteBid(id);
-    loadBids();
+  const handleDeleteBid = async (id: string) => {
+    await bidStorage.deleteBid(id);
+    await loadBids();
     setSelectedBid(null);
   };
 

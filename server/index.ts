@@ -3,6 +3,8 @@ import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
 import { handleCreateBidFolder, handleSetBasePath, handleOpenFile } from "./routes/bids";
+import { handleGetSettings, handleSaveSettings } from "./routes/settings";
+import { handleGetBids, handleSaveBids } from "./routes/bids-data";
 
 export function createServer() {
   const app = express();
@@ -25,7 +27,15 @@ export function createServer() {
 
   app.get("/api/demo", handleDemo);
 
-  // Bid routes
+  // Settings routes
+  app.get("/api/settings", handleGetSettings);
+  app.post("/api/settings", handleSaveSettings);
+
+  // Shared bids data routes
+  app.get("/api/shared-bids", handleGetBids);
+  app.post("/api/shared-bids", handleSaveBids);
+
+  // Bid folder operations
   app.post("/api/bids/create-folder", handleCreateBidFolder);
   app.post("/api/bids/set-base-path", handleSetBasePath);
   app.post("/api/bids/open-file", handleOpenFile);
