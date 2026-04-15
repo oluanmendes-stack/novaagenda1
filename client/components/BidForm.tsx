@@ -390,9 +390,12 @@ export function BidForm({ bid, onSave, onCancel }: BidFormProps) {
               <Input
                 type="date"
                 value={formData.disputeDate.toISOString().split("T")[0]}
-                onChange={(e) =>
-                  handleChange("disputeDate", new Date(e.target.value))
-                }
+                onChange={(e) => {
+                  // Parse date string in local timezone, not UTC
+                  const [year, month, day] = e.target.value.split("-");
+                  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                  handleChange("disputeDate", date);
+                }}
                 className="mt-1"
               />
             </div>
