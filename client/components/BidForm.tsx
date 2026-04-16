@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getBidColor } from "@/lib/bid-utils";
-import { bidStorage } from "@/lib/storage";
+import { settingsStorage, bidStorage } from "@/lib/storage";
 import { generateUUID } from "@/lib/utils";
 import { FileUpload } from "./FileUpload";
 import { ItemsManager } from "./ItemsManager";
@@ -118,6 +118,7 @@ export function BidForm({ bid, onSave, onCancel }: BidFormProps) {
         },
         attachments: [],
         processHistory: [],
+        folderCreated: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -148,6 +149,7 @@ export function BidForm({ bid, onSave, onCancel }: BidFormProps) {
         },
         attachments: [],
         processHistory: [],
+        folderCreated: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -234,7 +236,55 @@ export function BidForm({ bid, onSave, onCancel }: BidFormProps) {
         return;
       }
 
-      // Save the bid (folder creation will happen on-demand when user opens folder/attachment)
+      // Create folder structure ONLY on first save (if not already created)
+      if (!formData.folderCreated) {
+        const basePath = settingsStorage.getBasePath();
+        if (basePath && basePath.trim()) {
+          try {
+            const response = await fetch("/api/bids/create-folder", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                basePath,
+                bid: {
+                  id: formData.id,
+                  year: formData.year,
+                  state: formData.state,
+                  city: formData.city,
+                  bidNumber: formData.bidNumber,
+                  notes: formData.notes,
+                  attachments: formData.attachments,
+                },
+              }),
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              const errorMsg = errorData.details || errorData.error;
+
+              setError(
+                `Não foi possível criar a pasta da licitação:\n\n${errorMsg}\n\nVerifique se:\n• O caminho está correto\n• Você tem permissão de escrita\n• A unidade de rede está conectada`
+              );
+              setIsLoading(false);
+              return;
+            }
+
+            // Mark folder as created so we don't create it again
+            formData.folderCreated = true;
+          } catch (folderError) {
+            const errorMsg = folderError instanceof Error ? folderError.message : String(folderError);
+            setError(
+              `Erro ao conectar ao servidor para criar pasta:\n\n${errorMsg}`
+            );
+            setIsLoading(false);
+            return;
+          }
+        }
+      }
+
+      // Save the bid
       onSave(formData);
     } catch (err) {
       setError(

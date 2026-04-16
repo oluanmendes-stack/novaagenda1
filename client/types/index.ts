@@ -36,6 +36,7 @@ export interface Bid {
   attachments: BidAttachment[];
   processHistory: ProcessHistoryEntry[];
   effectiveDate?: string; // Additional date field
+  folderCreated?: boolean; // Track if folder was created on server
   createdAt: Date;
   updatedAt: Date;
 }
