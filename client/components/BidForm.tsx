@@ -118,6 +118,7 @@ export function BidForm({ bid, onSave, onCancel }: BidFormProps) {
         },
         attachments: [],
         processHistory: [],
+        folderCreated: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -148,6 +149,7 @@ export function BidForm({ bid, onSave, onCancel }: BidFormProps) {
         },
         attachments: [],
         processHistory: [],
+        folderCreated: false,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -234,50 +236,55 @@ export function BidForm({ bid, onSave, onCancel }: BidFormProps) {
         return;
       }
 
-      // Create folder structure if basePath is configured
-      const basePath = settingsStorage.getBasePath();
-      if (basePath && basePath.trim()) {
-        try {
-          const response = await fetch("/api/bids/create-folder", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              basePath,
-              bid: {
-                id: formData.id,
-                year: formData.year,
-                state: formData.state,
-                city: formData.city,
-                bidNumber: formData.bidNumber,
-                notes: formData.notes,
-                attachments: formData.attachments,
+      // Create folder structure ONLY on first save (if not already created)
+      if (!formData.folderCreated) {
+        const basePath = settingsStorage.getBasePath();
+        if (basePath && basePath.trim()) {
+          try {
+            const response = await fetch("/api/bids/create-folder", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
               },
-            }),
-          });
+              body: JSON.stringify({
+                basePath,
+                bid: {
+                  id: formData.id,
+                  year: formData.year,
+                  state: formData.state,
+                  city: formData.city,
+                  bidNumber: formData.bidNumber,
+                  notes: formData.notes,
+                  attachments: formData.attachments,
+                },
+              }),
+            });
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            const errorMsg = errorData.details || errorData.error;
+            if (!response.ok) {
+              const errorData = await response.json();
+              const errorMsg = errorData.details || errorData.error;
 
+              setError(
+                `Não foi possível criar a pasta da licitação:\n\n${errorMsg}\n\nVerifique se:\n• O caminho está correto\n• Você tem permissão de escrita\n• A unidade de rede está conectada`
+              );
+              setIsLoading(false);
+              return;
+            }
+
+            // Mark folder as created so we don't create it again
+            formData.folderCreated = true;
+          } catch (folderError) {
+            const errorMsg = folderError instanceof Error ? folderError.message : String(folderError);
             setError(
-              `Não foi possível criar a pasta da licitação:\n\n${errorMsg}\n\nVerifique se:\n• O caminho está correto\n• Você tem permissão de escrita\n• A unidade de rede está conectada`
+              `Erro ao conectar ao servidor para criar pasta:\n\n${errorMsg}`
             );
             setIsLoading(false);
             return;
           }
-        } catch (folderError) {
-          const errorMsg = folderError instanceof Error ? folderError.message : String(folderError);
-          setError(
-            `Erro ao conectar ao servidor para criar pasta:\n\n${errorMsg}`
-          );
-          setIsLoading(false);
-          return;
         }
       }
 
-      // Save the bid after confirming folder was created
+      // Save the bid
       onSave(formData);
     } catch (err) {
       setError(
@@ -390,9 +397,12 @@ export function BidForm({ bid, onSave, onCancel }: BidFormProps) {
               <Input
                 type="date"
                 value={formData.disputeDate.toISOString().split("T")[0]}
-                onChange={(e) =>
-                  handleChange("disputeDate", new Date(e.target.value))
-                }
+                onChange={(e) => {
+                  // Parse date string in local timezone, not UTC
+                  const [year, month, day] = e.target.value.split("-");
+                  const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                  handleChange("disputeDate", date);
+                }}
                 className="mt-1"
               />
             </div>

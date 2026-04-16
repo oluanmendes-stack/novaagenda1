@@ -8,6 +8,20 @@ let lastSyncTime = 0;
 const SYNC_INTERVAL = 60000;
 let pendingSync = false;
 
+// Helper function to safely save to localStorage with quota error handling
+function safeLocalStorageSetItem(key: string, value: string): boolean {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (error) {
+    if (error instanceof Error && error.name === "QuotaExceededError") {
+      console.warn("localStorage quota exceeded. Server sync will still work. Consider cleaning up old bids.");
+      return false;
+    }
+    throw error;
+  }
+}
+
 async function syncBidsWithServer(bids: Bid[]): Promise<void> {
   // Debounce frequent syncs
   if (pendingSync) return;
@@ -87,8 +101,8 @@ export const bidStorage = {
       // Try to load from server first
       const serverBids = await loadBidsFromServer();
       if (serverBids.length > 0) {
-        // Cache in localStorage for offline access
-        localStorage.setItem(BIDS_KEY, JSON.stringify(serverBids));
+        // Cache in localStorage for offline access (non-blocking if quota exceeded)
+        safeLocalStorageSetItem(BIDS_KEY, JSON.stringify(serverBids));
         return serverBids;
       }
     } catch (error) {
@@ -151,10 +165,10 @@ export const bidStorage = {
       bids.push(bid);
     }
 
-    // Save to localStorage immediately
-    localStorage.setItem(BIDS_KEY, JSON.stringify(bids));
+    // Save to localStorage immediately (non-blocking if quota exceeded)
+    safeLocalStorageSetItem(BIDS_KEY, JSON.stringify(bids));
 
-    // Sync with server in the background
+    // Sync with server in the background (this is the reliable storage)
     await syncBidsWithServer(bids);
   },
 
@@ -162,10 +176,10 @@ export const bidStorage = {
     const bids = await bidStorage.getBids();
     const filtered = bids.filter((b) => b.id !== id);
 
-    // Save to localStorage immediately
-    localStorage.setItem(BIDS_KEY, JSON.stringify(filtered));
+    // Save to localStorage immediately (non-blocking if quota exceeded)
+    safeLocalStorageSetItem(BIDS_KEY, JSON.stringify(filtered));
 
-    // Sync with server in the background
+    // Sync with server in the background (this is the reliable storage)
     await syncBidsWithServer(filtered);
   },
 
@@ -197,7 +211,7 @@ export const settingsStorage = {
   },
 
   saveSettings: (settings: AppSettings) => {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    safeLocalStorageSetItem(SETTINGS_KEY, JSON.stringify(settings));
   },
 
   getBasePath: (): string => {
