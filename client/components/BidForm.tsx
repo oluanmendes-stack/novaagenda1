@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getBidColor } from "@/lib/bid-utils";
-import { settingsStorage, bidStorage } from "@/lib/storage";
+import { bidStorage } from "@/lib/storage";
 import { generateUUID } from "@/lib/utils";
 import { FileUpload } from "./FileUpload";
 import { ItemsManager } from "./ItemsManager";
@@ -234,50 +234,7 @@ export function BidForm({ bid, onSave, onCancel }: BidFormProps) {
         return;
       }
 
-      // Create folder structure if basePath is configured
-      const basePath = settingsStorage.getBasePath();
-      if (basePath && basePath.trim()) {
-        try {
-          const response = await fetch("/api/bids/create-folder", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              basePath,
-              bid: {
-                id: formData.id,
-                year: formData.year,
-                state: formData.state,
-                city: formData.city,
-                bidNumber: formData.bidNumber,
-                notes: formData.notes,
-                attachments: formData.attachments,
-              },
-            }),
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            const errorMsg = errorData.details || errorData.error;
-
-            setError(
-              `Não foi possível criar a pasta da licitação:\n\n${errorMsg}\n\nVerifique se:\n• O caminho está correto\n• Você tem permissão de escrita\n• A unidade de rede está conectada`
-            );
-            setIsLoading(false);
-            return;
-          }
-        } catch (folderError) {
-          const errorMsg = folderError instanceof Error ? folderError.message : String(folderError);
-          setError(
-            `Erro ao conectar ao servidor para criar pasta:\n\n${errorMsg}`
-          );
-          setIsLoading(false);
-          return;
-        }
-      }
-
-      // Save the bid after confirming folder was created
+      // Save the bid (folder creation will happen on-demand when user opens folder/attachment)
       onSave(formData);
     } catch (err) {
       setError(

@@ -94,9 +94,48 @@ export function BidDetail({ bid, onEdit, onDelete, onClose }: BidDetailProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isOpeningFile, setIsOpeningFile] = useState(false);
 
+  const ensureFolderExists = async (): Promise<boolean> => {
+    try {
+      const basePath = settingsStorage.getBasePath();
+      if (!basePath || !basePath.trim()) {
+        return true; // Skip folder creation if no basePath configured
+      }
+
+      // Create folder structure on-demand when user tries to open files
+      const response = await fetch("/api/bids/create-folder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          basePath,
+          bid: {
+            id: bid.id,
+            year: bid.year,
+            state: bid.state,
+            city: bid.city,
+            bidNumber: bid.bidNumber,
+            notes: bid.notes,
+            attachments: bid.attachments,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        console.warn("Failed to create folder structure, but continuing anyway");
+      }
+      return true;
+    } catch (error) {
+      console.warn("Error ensuring folder exists:", error);
+      return true; // Don't block file opening if folder creation fails
+    }
+  };
+
   const handleOpenFile = async (attachment: BidAttachment) => {
     try {
       setIsOpeningFile(true);
+
+      // Ensure folder structure exists (non-blocking)
+      await ensureFolderExists();
+
       const filePath = buildAttachmentPath(bid, attachment);
 
       if (!filePath) {
@@ -136,6 +175,10 @@ export function BidDetail({ bid, onEdit, onDelete, onClose }: BidDetailProps) {
   const handleOpenBidFolder = async () => {
     try {
       setIsOpeningFile(true);
+
+      // Ensure folder structure exists (non-blocking)
+      await ensureFolderExists();
+
       const folderPath = buildBidFolderPath(bid);
 
       if (!folderPath) {
